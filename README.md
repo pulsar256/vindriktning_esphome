@@ -2,7 +2,9 @@
 
 Based on findings of https://github.com/Hypfer/esp8266-vindriktning-particle-sensor - uses same hardware setup but with a different firmware approach. This one integrates into [esphome](https://github.com/esphome/esphome).
 
-TIL: there is also [another ESPHome integration attempt](https://github.com/Habbie/esphome/tree/pm1006/esphome/components/pm1006) in progress which already looks better integrated. 
+TIL: there is also [another ESPHome integration attempt](https://github.com/Habbie/esphome/tree/pm1006/esphome/components/pm1006) in progress which already looks better integrated.
+
+This approach does not talk directly to the sensor module but rather listens to the responsens from the PM1006 sensor module sent to the LED board and parses the output. The IKEA Vindriktning will still work as originally intended.
 
 ## Hardware TL;DR
 
@@ -54,7 +56,7 @@ logger:
 
 ## Working Principle
 
-The IKEA Vindriktning consists of two separate modules
+The IKEA Vindriktning consists of two separate modules.
 
 ### The PM1006 Sensor
 
@@ -72,3 +74,9 @@ Both board communicate using UART / Serial protocol, 9600 baud, 8n1. The LED boa
 ![alt text](assets/request_response.png)
 
 Recently I have also learned that there is a [datasheet](http://www.jdscompany.co.kr/download.asp?gubun=07&filename=PM1006_LED_PARTICLE_SENSOR_MODULE_SPECIFICATIONS.pdf) available for the module.
+
+from the Datasheet:
+
+Send: `11 02 0B 01 E1`
+Response: `16 11 0B DF1-DF4 DF5-DF8`
+Note: PM2.5(μg/m³)= `DF3*256+DF4`
