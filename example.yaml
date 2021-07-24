@@ -1,0 +1,47 @@
+esphome:
+  name: bedroom_eastwing_particle_pm25
+  platform: ESP8266
+  board: d1_mini
+  includes:
+    - my_components/vindriktning/vindriktning.h
+uart:
+  id: uart_bus
+  tx_pin: D0
+  rx_pin: D2
+  baud_rate: 9600
+
+sensor:
+- platform: custom
+  lambda: |-
+    auto my_sensor = new VindriktningSensor(id(uart_bus));
+    App.register_component(my_sensor);
+    return {my_sensor};
+  sensors:
+    name: "Bedroom East Wing PM 2.5"
+    unit_of_measurement: µg/m³
+    accuracy_decimals: 0
+
+wifi:
+  ssid: "smarthome"
+  password: "supersecure"
+  power_save_mode: none
+  manual_ip:
+    static_ip: 192.168.1.2
+    gateway: 192.168.1.1
+    subnet: 255.255.255.0  
+    dns1: 192.168.1.1
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Bedroom East Wing PM25"
+    password: "supersecure"
+
+captive_portal:
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+
+ota:
