@@ -51,8 +51,7 @@ sensor:
     return {my_sensor};
   sensors:
     name: "PM2.5 sensor in the secret underground lab"
-    unit_of_measurement: µg/m³
-    accuracy_decimals: 0
+
 logger:
 
 # api, ota, wifi, etc config go here.

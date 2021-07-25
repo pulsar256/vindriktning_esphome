@@ -3,22 +3,21 @@
 static const char *const TAG = "vindriktning";
 #define PACKET_SIZE 20
 
-class VindriktningSensor : public PollingSensorComponent, public UARTDevice {
+class VindriktningSensor : public Component, public Sensor, public UARTDevice {
     const char packetHeader[3] = {0x16, 0x11, 0x0b};
     u_char buffer[PACKET_SIZE];
     int bufferPos = 0;
     long lastTime = millis();
-    short reading = 0;
 
    public:
     VindriktningSensor(UARTComponent *parent)
-        : PollingSensorComponent("pm25sensor", 5000), UARTDevice(parent) {}
+        : Sensor("pm25sensor"), UARTDevice(parent) {}
 
-    void update() override {
-        if (reading > 0) publish_state(reading);
+    void setup() override {
+        set_icon("mdi:air-filter");
+        set_unit_of_measurement("µg/m³");
+        set_accuracy_decimals(0);
     }
-
-    void setup() override {}
 
     void loop() override {
         while (available()) {
@@ -61,13 +60,14 @@ class VindriktningSensor : public PollingSensorComponent, public UARTDevice {
 
         if (buffer[PACKET_SIZE - 1] != checksum) {
             ESP_LOGW(TAG,
-                     " invalid checksum (computed %02X vs. received %02X), "
+                     "invalid checksum (computed %02X vs. received %02X), "
                      "ignoring reading",
                      checksum, buffer[PACKET_SIZE - 1]);
             return;
         }
 
-        reading = ((((short)buffer[5]) << 8) | (0x00ff & buffer[6]));
+        auto reading = ((((short)buffer[5]) << 8) | (0x00ff & buffer[6]));
+        this->publish_state(reading);
 
         ESP_LOGD(TAG,
                  "time: %d, reading: %d,"
