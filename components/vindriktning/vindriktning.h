@@ -1,68 +1,69 @@
 #include "esphome.h"
 
-static const char *const TAG = "vindriktning";
-#define PACKET_SIZE 20
-
 class VindriktningSensor : public Component, public Sensor, public UARTDevice {
-    const char packetHeader[3] = {0x16, 0x11, 0x0b};
-    u_char buffer[PACKET_SIZE];
-    int bufferPos = 0;
-    long lastTime = millis();
+
+    static constexpr char *const TAG = "vindriktning";
+    static constexpr char PACKET_HEADER[3] = {0x16, 0x11, 0x0b};
+    static constexpr int PM1006_RESPONSE_SIZE = 20;
+
+    u_char buffer[PM1006_RESPONSE_SIZE];
+    int buffer_position = 0;
+    long last_time = millis();
 
    public:
     VindriktningSensor(UARTComponent *parent)
         : Sensor("pm25sensor"), UARTDevice(parent) {}
 
     void setup() override {
-        set_icon("mdi:air-filter");
-        set_unit_of_measurement("µg/m³");
-        set_accuracy_decimals(0);
+        this->set_icon("mdi:air-filter");
+        this->set_unit_of_measurement("µg/m³");
+        this->set_accuracy_decimals(0);
     }
 
     void loop() override {
-        while (available()) {
-            char c = read();
-            fillBuffer(&c);
-            if (bufferReady()) parseBuffer();
+        while (this->available()) {
+            char c = this->read();
+            this->fill_buffer_(&c);
+            if (this->buffer_ready_()) this->parse_buffer_();
         }
     }
 
-   private:
-    void fillBuffer(char *c) {
-        long currentTime = millis();
-        long delta = (currentTime - lastTime);
+   protected:
+    void fill_buffer_(char *c) {
+        long current_time = millis();
+        long time_delta = (current_time - last_time);
         // packets are at least 800ms apart
-        if (delta > 800) {
+        if (time_delta > 800) {
             ESP_LOGV(TAG,
                      "flushing buffer, current bufferPos %u, time delta %d",
-                     this->bufferPos, delta);
-            bufferPos = 0;
+                     this->buffer_position, delta);
+            buffer_position = 0;
         }
-        if (bufferPos < PACKET_SIZE) buffer[bufferPos++] = *c;
-        lastTime = currentTime;
+        if (buffer_position < PM1006_RESPONSE_SIZE) buffer[buffer_position++] = *c;
+        last_time = current_time;
     }
 
-    bool bufferReady() { return bufferPos == PACKET_SIZE; }
+    bool buffer_ready_() { return buffer_position == PM1006_RESPONSE_SIZE; }
 
-    void parseBuffer() {
-        for (int i = 0; i < sizeof(packetHeader) / sizeof(packetHeader[0]);
+    void parse_buffer_() {
+        for (int i = 0; i < sizeof(PACKET_HEADER) / sizeof(PACKET_HEADER[0]);
              i++) {
-            if (buffer[i] != packetHeader[i]) {
+            if (buffer[i] != PACKET_HEADER[i]) {
                 ESP_LOGW(TAG, "Invalid packet header, cannot parse");
                 return;
             }
         }
 
         u_char checksum = 0;
-        for (int i = 0; i < PACKET_SIZE; i++) {
+        for (int i = 0; i < PM1006_RESPONSE_SIZE; i++) {
             checksum = +buffer[i];
         }
 
-        if (buffer[PACKET_SIZE - 1] != checksum) {
+        if (buffer[PM1006_RESPONSE_SIZE - 1] != checksum) {
             ESP_LOGW(TAG,
                      "invalid checksum (computed %02X vs. received %02X), "
                      "ignoring reading",
-                     checksum, buffer[PACKET_SIZE - 1]);
+                     checksum, buffer[PM1006_RESPONSE_SIZE - 1]);
             return;
         }
 
@@ -79,6 +80,6 @@ class VindriktningSensor : public Component, public Sensor, public UARTDevice {
                  buffer[14], buffer[15], buffer[16], buffer[17], buffer[18],
                  buffer[19]);
 
-        bufferPos = 0;
+        buffer_position = 0;
     }
 };
