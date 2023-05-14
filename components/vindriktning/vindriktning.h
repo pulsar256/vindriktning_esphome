@@ -11,7 +11,7 @@ class VindriktningSensor : public Component, public Sensor, public UARTDevice {
 
    public:
     VindriktningSensor(UARTComponent *parent)
-        : Sensor("pm25sensor"), UARTDevice(parent) {}
+        : Sensor(), UARTDevice(parent) {}
 
     void setup() override {
         this->set_icon("mdi:air-filter");
